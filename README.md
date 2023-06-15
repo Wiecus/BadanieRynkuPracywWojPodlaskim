@@ -4,7 +4,7 @@ Badanie rynku Pracy w województwie podlaskim w przekroju powiatów przy użyciu
 
 Do stworzenia kartogramów potrzebne jest pobranie plików shp ze strony https://gis-support.pl/baza-wiedzy-2/dane-do-pobrania/granice-administracyjne/
 
-![image](https://github.com/Wiecus/BadanieRynkuPracywWojPodlaskim/assets/126171977/80900633-0264-4c57-a1a9-9c79e9a1470f)
+![image](https://github.com/Wiecus/BadanieRynkuPracywWojPodlaskim/assets/126171977/08080c1b-53d8-4966-9e21-803bed7f5492)
 
 ![image](https://github.com/Wiecus/BadanieRynkuPracywWojPodlaskim/assets/126171977/9bd4292d-5d2e-415a-b147-da6554928ce1)
 
