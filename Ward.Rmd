@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-06-11"
+---
+
+```{r}
+#metoda topsis w programie R - ujecie macierzowe
+library(readxl)
+library(dplyr)
+library(tmap)
+library(tmaptools)
+library(sf)
+library(rgdal)
+library(topsis)
+library(ggplot2)
+library(gdm)
+library(clusterSim)
+```
+
+```{r}
+
+powiaty <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 3)
+etykiety <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 6)
+powiaty$JPT_KOD_JE <- as.character(powiaty$JPT_KOD_JE)
+powiatyshp <- st_read('Powiaty/powiaty.shp')
+
+```
+
+
+
+```{r}
+dist.podl.eucl <- dist(powiaty[,3:8],method='euclidean')
+cluster <- hclust(dist.podl.eucl,method='ward.D')
+plot(cluster,labels=powiaty$powiat,
+main="Metoda Warda",hang=-1)
+rect.hclust(cluster,k=4,border='blue')
+
+pow.cluster <- cutree(cluster,k=4)
+# print(pow.cluster)
+powiaty$cluster <- pow.cluster
+```
+
+```{r}
+powiaty_all <- left_join(powiatyshp, powiaty)
+powiaty_podlasie <- powiatyshp[substr(powiatyshp$JPT_KOD_JE,1,2)=='20',]
+powiaty_podlasie_all <- left_join(powiaty_podlasie,powiaty)
+```
+
+
+```{r}
+cluster <- tm_shape(powiaty_podlasie_all) +
+tm_polygons('cluster',border.col='black',title='Cluster') +
+tm_text('powiat', size=0.7) +
+tm_shape(powiaty_podlasie_all)+
+tm_text('cluster', size=0.7,ymod=-0.5)
+tmap_save(cluster,'WardMap.png', height = 5)
+```

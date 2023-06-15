@@ -1,0 +1,77 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-06-11"
+---
+
+```{r}
+#metoda topsis w programie R - ujecie macierzowe
+library(readxl)
+library(dplyr)
+library(tmap)
+library(tmaptools)
+library(sf)
+library(rgdal)
+library(topsis)
+library(ggplot2)
+library(gdm)
+library(clusterSim)
+```
+
+```{r}
+
+powiaty <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 3)
+etykiety <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 6)
+powiaty$JPT_KOD_JE <- as.character(powiaty$JPT_KOD_JE)
+powiatyshp <- st_read('Powiaty/powiaty.shp')
+
+```
+
+
+
+
+
+```{r}
+
+ranking <- pattern.GDM1(powiaty[,3:8],performanceVariable = c("d","d","d","s","s","s"),scaleType = "r", nomOptValues = NULL, weightsType = "equal", patternType = "upper")
+
+
+```
+
+```{r}
+
+dane <- round(ranking$distances, 3)
+
+```
+
+```{r}
+
+powiaty$dane <- dane
+
+```
+
+```{r}
+
+powiaty_all <- left_join(powiatyshp, powiaty)
+
+```
+
+```{r}
+
+powiaty_podlasie <- powiatyshp[substr(powiatyshp$JPT_KOD_JE,1,2)=='20',]
+powiaty_podlasie_all <- left_join(powiaty_podlasie,powiaty)
+
+```
+
+```{r}
+# tworzymy kartogram z miara dane dla powiatow woj podlaskiego
+
+
+dane <- tm_shape(powiaty_podlasie_all) +
+tm_polygons('dane',border.col='black',title='GDM',
+breaks=quantile(powiaty_podlasie_all$dane)) +
+tm_text('powiat', size=0.7) +
+tm_shape(powiaty_podlasie_all)+
+tm_text('dane', size=0.7,ymod=-0.5)
+tmap_save(dane,'GDM.png', height = 5)
+```

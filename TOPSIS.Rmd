@@ -1,0 +1,118 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#metoda topsis w programie R - ujecie macierzowe
+library(readxl)
+library(dplyr)
+library(tmap)
+library(tmaptools)
+library(sf)
+library(rgdal)
+library(topsis)
+library(ggplot2)
+```
+
+```{r}
+
+powiaty <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 3)
+etykiety <- read_xlsx('dane/RynekPracyLicencjat.xlsx', sheet = 6)
+powiaty$JPT_KOD_JE <- as.character(powiaty$JPT_KOD_JE)
+powiatyshp <- st_read('Powiaty/powiaty.shp')
+
+```
+
+```{r}
+#utworzenie znormalizowanej macierzy danych zij
+
+xij <- powiaty %>% select(3:8) %>% as.matrix()
+print(xij)
+
+zij <- matrix(,nrow(xij), ncol(xij))
+print(zij)
+
+for(j in 1:6){
+  zij[,j] <- round(xij[,j]/sqrt(sum(xij[,j]^2)),2)
+}
+print(zij)
+```
+
+```{r}
+# tworzymy wagi wj
+
+wj <- rep(1,6)
+print(wj)
+
+vij <- wj*zij
+print(vij)
+```
+
+```{r}
+# tworzymy wektor a+ i a-
+
+apl <- c(min(vij[,1]),min(vij[,2]),min(vij[,3]),max(vij[,4]),max(vij[,5]),max(vij[,6]))
+ami <- c(max(vij[,1]),max(vij[,2]),max(vij[,3]),min(vij[,4]),min(vij[,5]),min(vij[,6]))
+print(apl)
+print(ami)
+```
+
+```{r}
+# oblicznie odleglosci euklidesowych badanych obiektow od rozwiazania idealnego i antyidealnego
+
+dpl <- matrix(,nrow(xij),1)
+dmi <- matrix(,nrow(xij),1)
+
+for(i in 1:nrow(xij)){
+  dpl[i,1] <- sqrt(sum((vij[i,]-apl)^2))
+  dmi[i,1] <- sqrt(sum((vij[i,]-ami)^2))
+}
+print(dpl)
+print(dmi)
+```
+
+```{r}
+# wyznaczenie wspolczynnika rankingowego okreslajacego podobienstwo obiektow do rozwiazania idealnego
+
+R <- round(dmi/(dmi+dpl),2)
+print(R)
+
+powiaty$R <- as.vector(R)
+```
+
+```{r}
+# robimy to samo pakietem topsis
+
+i <- c('-','-','-','+','+','+')
+R1 <- topsis(zij,wj,i)
+print(R1)
+powiaty$R1 <- R1
+
+```
+
+```{r}
+
+powiaty_all <- left_join(powiatyshp, powiaty)
+
+```
+
+```{r}
+
+powiaty_podlasie <- powiatyshp[substr(powiatyshp$JPT_KOD_JE,1,2)=='20',]
+powiaty_podlasie_all <- left_join(powiaty_podlasie,powiaty)
+
+```
+
+```{r}
+# tworzymy kartogram z miara R dla powiatow woj podlaskiego
+
+
+R <- tm_shape(powiaty_podlasie_all) +
+tm_polygons('R',border.col='black',title='Topsis',
+breaks=quantile(powiaty_podlasie_all$R)) +
+tm_text('powiat', size=0.7) +
+tm_shape(powiaty_podlasie_all)+
+tm_text('R', size=0.7,ymod=-0.5)
+tmap_save(R,'TOPSIS.png', height = 5)
+```
